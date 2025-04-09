@@ -62,6 +62,9 @@ NextFace is a light-weight PyTorch library for high-fidelity 3D face reconstruct
 - Runs on both CPU and CUDA-enabled GPU.
 
 # 🔧 Installation
+
+## Step 1
+Initial Setup and Installation
 * Clone the repository.
 * Run the included `setup_faceNext_env.bat` script found within the Main FaceNext Folder (right-click → **Run as Administrator**).  
   This script will:
@@ -73,10 +76,15 @@ NextFace is a light-weight PyTorch library for high-fidelity 3D face reconstruct
     py -m pip install --user mediapipe
     ```
 * Alternatively, use the provided `environment.yml` for manual setup (note that some packages like MediaPipe must still be installed separately).
+  
+  ## Step 2
+  Activation
 * Activate the environment:
   ```bash
   conda activate faceNext
   ```
+  ## Step 3
+  Dowloading Required Base Models and Albedo.
 * Download the Basel Face Model from [here](https://faces.dmi.unibas.ch/bfm/bfm2017.html).  
   Fill out the form to receive a download link via email, then place the `model2017-1_face12_nomouth.h5` file into the `./baselMorphableModel` directory.
 * Download the Albedo Face Model from [here](https://github.com/waps101/AlbedoMM/releases/download/v1.0/albedoModel2020_face12_albedoPart.h5).  

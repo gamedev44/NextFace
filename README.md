@@ -63,7 +63,7 @@ NextFace is a light-weight PyTorch library for high-fidelity 3D face reconstruct
 
 # 🔧 Installation
 * Clone the repository.
-* Run the included `setup_faceNext_env.bat` script (right-click → **Run as Administrator**).  
+* Run the included `setup_faceNext_env.bat` script found within the Main FaceNext Folder (right-click → **Run as Administrator**).  
   This script will:
   - Delete any previous `faceNext` environment.
   - Create a new conda environment with Python 3.9.

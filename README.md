@@ -1,119 +1,188 @@
-# NextFace
-NextFace is a light-weight pytorch library for high-fidelity 3D face reconstruction from monocular image(s) where scene attributes –3D geometry, reflectance (diffuse, specular and roughness), pose, camera parameters, and scene illumination– are estimated. It is a first-order optimization method that uses pytorch autograd engine and ray tracing to fit a statistical morphable model to an input image(s).
-<p align="center"><img src="resources/emily.png" style="float: left; width: 23%; margin-right: 1%; margin-bottom: 0.5em;"><img src="resources/emily.gif" style="float: left;  margin-right: 1%; margin-bottom: 0.5em;">
-<img src="resources/beard.png" style="float: left; width: 23%; margin-right: 1%; margin-bottom: 0.5em;"><img src="resources/beard.gif" style="float: left;  margin-right: 1%; margin-bottom: 0.5em;"><img src="resources/visual.jpg" ></p>
+# NextFace V2 With Batch Automated Setup
+## Modified and Updated by: Risk
+
+NextFace is a light-weight PyTorch library for high-fidelity 3D face reconstruction from monocular image(s) where scene attributes – 3D geometry, reflectance (diffuse, specular and roughness), pose, camera parameters, and scene illumination – are estimated. It is a first-order optimization method that uses the PyTorch autograd engine and ray tracing to fit a statistical morphable model to input image(s).
 
 <p align="center">
-<strong>A demo on youtube from here:</strong>
+  <img src="resources/emily.png" style="float: left; width: 23%; margin-right: 1%; margin-bottom: 0.5em;">
+  <img src="resources/emily.gif" style="float: left; margin-right: 1%; margin-bottom: 0.5em;">
+  <img src="resources/beard.png" style="float: left; width: 23%; margin-right: 1%; margin-bottom: 0.5em;">
+  <img src="resources/beard.gif" style="float: left; margin-right: 1%; margin-bottom: 0.5em;">
+  <img src="resources/visual.jpg">
+</p>
+
+<p align="center">
+  <strong>A demo on YouTube from here:</strong>
 </p>
 <p align="center">
-<a href="http://www.youtube.com/watch?v=bPFp0oZ9plg" title="Practical Face Reconstruction via Differentiable Ray Tracing"><img src="http://img.youtube.com/vi/bPFp0oZ9plg/0.jpg" alt="Practical Face Reconstruction via Differentiable Ray Tracing" /></a>
+  <a href="http://www.youtube.com/watch?v=bPFp0oZ9plg" title="Practical Face Reconstruction via Differentiable Ray Tracing">
+    <img src="http://img.youtube.com/vi/bPFp0oZ9plg/0.jpg" alt="Practical Face Reconstruction via Differentiable Ray Tracing" />
+  </a>
 </p>
 
+## Table of Contents
+- [News](#news)
+- [Features](#features)
+- [Installation](#-installation)
+- [How to Use](#how-to-use)
+- [Directory Structure](#directory-structure)
+- [How it Works](#how-it-works)
+- [Good Practice for Best Reconstruction](#good-practice-for-best-reconstruction)
+- [Limitations](#limitations)
+- [Roadmap](#roadmap)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
+- [Contact](#contact)
+- [Citation](#citation)
 
+# News
+- **2025-04-08**: Fixed the MediaPipe installer and added a full app installation/setup batch.
+- **19 March 2023**: Fixed a bug in the optimizer where the gradients were not activated for the camera position (rotation and translation). Also added a new optimization strategy for stages two and three which should improve overall performance. Please pull the latest update.
+- **21 June 2022**: Many thanks to [Jack Saunders](https://researchportal.bath.ac.uk/en/persons/jack-saunders) for adding a new feature to NextFace: support for [MediaPipe](https://google.github.io/mediapipe/solutions/face_mesh.html#overview) as a replacement for the FAN landmarks detector. MediaPipe produces much more stable and accurate results than FAN. To try MediaPipe, pull the new version of the code and install it using:
+  ```
+  py -m pip install --user mediapipe
+  ```
+  By default, the landmarks detector is set to MediaPipe. To switch back to FAN, edit the **optimConfig.ini** file (set `landmarksDetectorType = 'fan'`).
+- **01 May 2022**: To generate an animation (like the GIFs in the README) that rotates the reconstruction on the vertical axis, run the `replay.py` script with the path of the pickle file containing the optimized scene attributes (located in `checkpoints/stage3_output.pickle`).
+- **26 April 2022**: Added export of the estimated light map (as an environment map). This is useful for rendering the face with other engines (Unreal, Unity, OpenGL). Pull the latest code. You can export the light map as PNG or EXR (see **optimConfig.ini**).
+- **25 April 2022**: For high-resolution textures (1024x1024 or 2048x2048), download **uvParametrization.2048.pickle** and **uvParametrization.1024.pickle** from [here](https://github.com/abdallahdib/NextFace/releases). Place them in the `baselMorphableModel` directory and change `textureResolution` in **optimConfig.ini** accordingly. Note: larger UV maps require more CPU/GPU memory.
+- **24 April 2022**: A Colab notebook is now available in `demo.ipynb`.
+- **20 April 2022**: Updated landmarks association file for better reconstruction, especially along face contours. Please pull the latest changes.
+- **20 April 2022**: Demonstrated NextFace on a challenging face with appealing reconstruction results:
+  <p align="center">
+    <img src="resources/results1.gif" style="float: left; width: 50%; margin-right: 1%; margin-bottom: 0.5em;">
+  </p>
 
+# Features
+- Reconstructs face at high fidelity from single or multiple RGB images.
+- Estimates face geometry.
+- Estimates detailed face reflectance (diffuse, specular, and roughness).
+- Estimates scene light with spherical harmonics.
+- Estimates head pose and orientation.
+- Runs on both CPU and CUDA-enabled GPU.
 
-# News 
-* **19 March 2023**: fixed a bug in the optimizer where the gradients were not activated for the camera pos (rotation and translation). Also I added a new optimization strategy for the second and third stage which should improve the overall performance. plz pull
-* **21 June 2022**: Many thanks for **[Jack Saunders](https://researchportal.bath.ac.uk/en/persons/jack-saunders)** for adding this new feature to NextFace: Added support for [mediapipe](https://google.github.io/mediapipe/solutions/face_mesh.html#overview) as a replacement for FAN landmarks detector. Mediapipe produces much stable and accurate results than FAN . To try mediapipe, you need to pull the new version of the code and install mediapipe ** pip install mediapipe** . Now by default the landmarks detector used is mediapipe, if you want to switch bach to FAN plz edit the **optimConfig.ini** file (set **lamdmarksDetectorType = 'fan'**)
-* **01 May 2022**: i you want to generate an animation like the one of the gif files in the readme that rotates the reconstruction on the vertical axis, plz run the replay.py script and give it the path of the pickle file that contains the optimized scene attributes ( located in  checkpoints/stage3_output.pickle). 
-* **26 April 2022**: I added export of the estimated light map (as an environment map). this can be useful if you want to render the face with other rendering engines (Unreal, Unity, OpenGL). plz pull the code. U can choose to export the lightmap as png or exr (check optimConfig.ini)
-* **25 April 2022**: if you want to generate textures with higher resolutions (1024x1024 or 2048x2048) I have added these two maps here : **https://github.com/abdallahdib/NextFace/releases**. to use these maps, download **uvParametrization.2048.pickle** and **uvParametrization.1024.pickle** and put them inside **baselMorphableModel** directory and change the **textureResolution** in **optimConfig.in** to 1024 or 2048. Also dont forget to pull the latest code. Plz note that with these large uvmaps optimization will require more cpu/gpu memory. 
-* **24 April 2022**: added a colab notebook in: **demo.ipynb**. 
-* **20 April 2022**: I replaced landmarks association file with a new one which gives better reconstruction, especially on face coutours. Plz pull
-* **20 April 2022**: I tried NextFace on a challenging face and surprisingly we still get appealing reconstruction, check below:
-<p align="center"><img src="resources/results1.gif" style="float: left; width: 50%; margin-right: 1%; margin-bottom: 0.5em;"></p>
+# 🔧 Installation
+* Clone the repository.
+* Run the included `setup_faceNext_env.bat` script (right-click → **Run as Administrator**).  
+  This script will:
+  - Delete any previous `faceNext` environment.
+  - Create a new conda environment with Python 3.9.
+  - Install required packages including PyTorch 1.10.2, torchvision 0.11.3, CUDA 10.2, and others.
+  - Install **MediaPipe** using the only working method on Windows:
+    ```
+    py -m pip install --user mediapipe
+    ```
+* Alternatively, use the provided `environment.yml` for manual setup (note that some packages like MediaPipe must still be installed separately).
+* Activate the environment:
+  ```bash
+  conda activate faceNext
+  ```
+* Download the Basel Face Model from [here](https://faces.dmi.unibas.ch/bfm/bfm2017.html).  
+  Fill out the form to receive a download link via email, then place the `model2017-1_face12_nomouth.h5` file into the `./baselMorphableModel` directory.
+* Download the Albedo Face Model from [here](https://github.com/waps101/AlbedoMM/releases/download/v1.0/albedoModel2020_face12_albedoPart.h5).  
+  Place the `albedoModel2020_face12_albedoPart.h5` file into the `./baselMorphableModel` directory.
 
-# Features: 
-* Reconstructs face at high fidelity from single or multiple RGB images
-* Estimates face geometry 
-* Estimates detailed face reflectance (diffuse, specular and roughness) 
-* Estimates scene light with spherical harmonics
-* Estimates head pose and orientation
-* Runs on both cpu and cuda-enabled gpu
+# How to Use
 
+## Reconstruction from a Single Image
+- To reconstruct a face from a single image, run:
+  ```
+  python optimizer.py --input <path-to-your-input-image> --output <output-path-where-to-save-results>
+  ```
 
-# Installation
-* Clone the repository 
-* Execute the commands in 'INSTALL' file. these commands create a new conda environment called faceNext and install required packages. An 'environment.yml' is also provided. The library is tested with torch 1.3.1, torchvision 0.4.2 and cuda toolkit 10.1, but it should also work with recent pytorch versions.   
-* Activate the environment: conda activate nextFace
-* Download basel face model from [here](https://faces.dmi.unibas.ch/bfm/bfm2017.html), just fill the form and you will receive an instant direct download link into your inbox. Downloaded  **model2017-1_face12_nomouth.h5 file** and put it inside **./baselMorphableModel** directory
-* Download the albedo face model **albedoModel2020_face12_albedoPart.h5** from [here](https://github.com/waps101/AlbedoMM/releases/download/v1.0/albedoModel2020_face12_albedoPart.h5) and put it inside **./baselMorphableModel** directory
+## Reconstruction from Multiple Images (Batch Reconstruction)
+- If you have multiple images with the same resolution, place all your images in a single directory and run:
+  ```
+  python optimizer.py --input <path-to-your-folder-containing-images> --output <output-path-where-to-save-results>
+  ```
 
+## Reconstruction from Multiple Images for the Same Person
+- If you have multiple images for the same person, place them in a single folder and run:
+  ```
+  python optimizer.py --sharedIdentity --input <path-to-your-folder-containing-images> --output <output-path-where-to-save-results>
+  ```
+  The `--sharedIdentity` flag tells the optimizer that all images belong to the same person. In this case, the shape identity and face reflectance attributes are shared across all images, generally producing better estimation.
 
-# How to use
-
-## Reconstruction from a single image
-* to reconstruct a face from a single image: run the following command:
-	* **python optimizer.py --input *path-to-your-input-image* --output *output-path-where-to-save-results***
-## Reconstruction from multiple images (batch reconstruction)
-* In case you have multiple images with same resolution, u can run a batch optimization on these images. For this, put all ur images in the same directory and run the following command: 
-	 * **python optimizer.py --input *path-to-your-folder-that-contains-all-ur-images* --output *output-path-where-to-save-results***
-## Reconstruction from mutliple images for the same person
-* if you have multiple images for the same person, put these images in the same folder and run the following command:
-	 * **python optimizer.py --sharedIdentity --input *path-to-your-folder-that-contains-all-ur-images* --output *output-path-where-to-save-results***
-
-	the **sharedIdentity** flag tells the optimizer that all images belong to the same person. In such case, the shape identity and face reflectance attributes are shared across all images. This generally produces  better face reflectance and geometry estimation. 
 ## Configuring NextFace
-* The file **optimConfig.ini** allows to control different aspect of NextFace such as:
-	* optimization (regularizations, number of iterations...)
-	* compute device (run on cpu or gpu)
-	* spherical harmonics (number of bands, environment map resolution)
-	* ray tracing (number of samples)
-* The code is self-documented and easy to follow 
+- The **optimConfig.ini** file allows you to control various aspects of NextFace such as:
+  - Optimization parameters (regularizations, number of iterations, etc.)
+  - Compute device (CPU or GPU)
+  - Spherical harmonics (number of bands, environment map resolution)
+  - Ray tracing (number of samples)
+- The code is self-documented and easy to follow.
 
-# Output 
-The optimization takes 4~5 minutes depending on your gpu performance. The output of the optimization is the following:
-* render_{imageIndex}.png: contains from left to right: input image, overlay of the final reconstruction on the input image, the final reconstruction, diffuse, specular and roughness maps projected on the face. 
-* diffuseMap_{imageIndex}.png: the estimated diffuse map in uv space
-* specularMap_{imageIndex}.png: the estimated specular map in uv space
-* roughnessMap_{imageIndex}.png: the estimated roughness map in uv space
-* mesh{imageIndex}.obj: an obj file that contains the 3D mesh of the reconstructed face
+# Directory Structure
+```
+NextFace/
+├── baselMorphableModel/
+│   ├── model2017-1_face12_nomouth.h5
+│   ├── albedoModel2020_face12_albedoPart.h5
+│   └── (other model files)
+├── checkpoints/
+│   └── stage3_output.pickle
+├── resources/
+│   ├── emily.png
+│   ├── emily.gif
+│   ├── beard.png
+│   ├── beard.gif
+│   ├── visual.jpg
+│   └── results1.gif
+├── setup_faceNext_env.bat
+├── environment.yml
+├── optimConfig.ini
+├── optimConfigShadows.ini
+├── optimizer.py
+├── replay.py
+├── demo.ipynb
+└── README.md
+```
 
-# How it works 
-NextFace reprocudes the optimizatin strategy of our [early work](https://arxiv.org/abs/2101.05356). The optimization is composed of the three stages:
-* **stage 1**: or coarse stage, where face expression and head pose are estimated by minimizing the geometric loss between the 2d landmarks and their corresponding face vertices. this produces a good starting point for the next optimization stage
-* **stage 2**: the face shape identity/expression,  statistical diffuse and specular albedos, head pose and scene light are estimated by minimizing the photo consistency loss between the ray traced image and the real one.
-* **stage 3**: to improve the statistical albedos estimated in the previous stage, the method optimizes, on per-pixel basis, the previously estimated albedos and try to capture more albedo details. Consistency, symmetry and smoothness regularizers (similar to [this work](https://arxiv.org/abs/2101.05356)) are used to avoid overfitting and add robustness against lighting conditions.  
-By default,  the method uses 9 order spherical harmonics bands (as in [this work](https://openaccess.thecvf.com/content/ICCV2021/papers/Dib_Towards_High_Fidelity_Monocular_Face_Reconstruction_With_Rich_Reflectance_Using_ICCV_2021_paper.pdf)) to capture scene light. you can modify the number of spherical harmonics bands  in **optimConfig.ini** bands and see the importance of using high number of bands for a better shadows recovery. 
+# How It Works
+NextFace reproduces the optimization strategy of our [early work](https://arxiv.org/abs/2101.05356). The optimization is composed of three stages:
+- **Stage 1**: A coarse stage where face expression and head pose are estimated by minimizing the geometric loss between 2D landmarks and their corresponding face vertices, producing a good starting point.
+- **Stage 2**: The face shape identity/expression, statistical diffuse and specular albedos, head pose, and scene light are estimated by minimizing the photometric consistency loss between the ray-traced image and the real one.
+- **Stage 3**: To refine the statistical albedos from the previous stage, per-pixel optimization is performed to capture more detailed albedo information. Consistency, symmetry, and smoothness regularizers (similar to [this work](https://arxiv.org/abs/2101.05356)) are used to prevent overfitting and account for lighting conditions.
 
-# Good practice for best reconstruction
+By default, NextFace uses 9-order spherical harmonics (as in [this work](https://openaccess.thecvf.com/content/ICCV2021/papers/Dib_Towards_High_Fidelity_Monocular_Face_Reconstruction_With_Rich_Reflectance_Using_ICCV_2021_paper.pdf)) for scene illumination. You can modify the number of bands in **optimConfig.ini** to improve shadow recovery.
 
-* To obtain best reconstruction with optimal albedos, ensure that the images are taken in good lighting conditions (no shadows and well lit...).
-* In case of single input image, ensure that the face is frontal to reconstructs a complete diffuse/specular/roughness, as the method recover only visible parts of the face. 
-* Avoid extreme face expressions as the underlying model may fail to recover them. 
-# Limitations 
-* The method relies on landmarks to initialize the optimization (Stage 1). In case these landmarks are inaccurate, you may get sub-optimal reconstruction. NextFace uses landmarks from [face_alignment](https://github.com/1adrianb/face-alignment) which are robust against extreme poses however they are not as accurate as they can be. This limitation has been discussed [here](https://openaccess.thecvf.com/content/ICCV2021/papers/Dib_Towards_High_Fidelity_Monocular_Face_Reconstruction_With_Rich_Reflectance_Using_ICCV_2021_paper.pdf) and [here](https://arxiv.org/abs/2101.05356). Using [this landmark detector](https://arxiv.org/abs/2204.02776) from Microsoft seems promising. 
-* NextFace is slow and execution speed decreases with the size of the input image. For instance, if you are running an old-gpu (like me), you can decrease the resolution of the input image in the **optimConfig.ini** file by reducing the value of the *maxResolution* parameter. Our [recent work](https://openaccess.thecvf.com/content/ICCV2021/papers/Dib_Towards_High_Fidelity_Monocular_Face_Reconstruction_With_Rich_Reflectance_Using_ICCV_2021_paper.pdf) solves for this and achieve near real-time performance using deep convolutional neural network.
-* NextFace cannot capture fine geometry details (wrinkles, pores...). these details may get baked in the final albedos. our recent [work](https://arxiv.org/abs/2203.07732) captures fine scale geometric details. 
-* The spherical harmonics can only model lights at infinity, under strong directional shadows, the estimated light may not be accurate as it can be, so residual shadows may appear in the estimated albedos. You can attenuate this by increasing the value of regularizers in the **optimConfig.ini** file, but this trade-off albedo details. 
-Below are the values to modify: 
-	* for diffuse map: *weightDiffuseSymmetryReg* and *weightDiffuseConsistencyReg*, 
-	* for specular map: *weightSpecularSymmetryReg*, *weightSpecularConsistencyReg*
-	* for roughness map: *weightRoughnessSymmetryReg* and *weightRoughnessConsistencyReg*
-I also provided a configuration file named **optimConfigShadows.ini** which have higher values for these regularizers that u can try.
-* Using a single image to estimate face attribute is an ill-posed problem and the estimated reflectance maps(diffuse, specular and roughness) are view/camera dependent. To obtain intrinsic reflectance maps, you have to use multiple images per subject.
+# Good Practice for Best Reconstruction
+- For optimal results, ensure images are taken in well-lit conditions (minimal shadows).
+- For a single image, ensure the face is frontal to obtain a complete reconstruction (only visible parts are recovered).
+- Avoid extreme facial expressions to prevent failures in reconstruction.
+
+# Limitations
+- The method relies on landmarks for initialization (Stage 1). Inaccurate landmarks may lead to suboptimal reconstructions. NextFace uses landmarks from [face_alignment](https://github.com/1adrianb/face-alignment), which are robust but not perfect.
+- Reconstruction speed decreases with higher resolution images. Lower the `maxResolution` value in **optimConfig.ini** if needed.
+- Fine geometry details (e.g., wrinkles, pores) might not be fully captured and can be baked into the final albedos. Our recent work [here](https://arxiv.org/abs/2203.07732) addresses fine detail capture.
+- Spherical harmonics model distant lights; under strong directional shadows, residual shadows may appear. Adjust regularizer weights in **optimConfig.ini** if necessary:
+  - For diffuse map: `weightDiffuseSymmetryReg` and `weightDiffuseConsistencyReg`
+  - For specular map: `weightSpecularSymmetryReg` and `weightSpecularConsistencyReg`
+  - For roughness map: `weightRoughnessSymmetryReg` and `weightRoughnessConsistencyReg`
+  A configuration file (**optimConfigShadows.ini**) with higher regularizer values is provided.
+- Single-image reconstruction is an ill-posed problem; obtaining intrinsic reflectance maps requires multiple images per subject.
 
 # Roadmap
-If I have time:
-* Expression tracking from video by optimizating head pose and expression on per-frame basis, which is straightforward once you have estimated the intrinsic face parameters(reflectance and geometry). I did not implement it yet simply, because i am running an old gpu (GTX 970M). I may add this feature when I decide to buy an RTX :)
-* Add virtual lightstage as proposed in [this](https://arxiv.org/abs/2101.05356) to model high frequency point lights.
-* Add support for [FLAME](https://github.com/Rubikplayer/flame-fitting) morphable model. You are welcome if you can help. 
-* Add GUI interface for loading images, landmarks edition, run optimization and visualize results.
- 
+If time permits:
+- Expression tracking from video by optimizing head pose and expression on a per-frame basis.
+- Adding a virtual light stage as proposed in [this work](https://arxiv.org/abs/2101.05356) for high-frequency point lights.
+- Support for the [FLAME](https://github.com/Rubikplayer/flame-fitting) morphable model.
+- A GUI interface for loading images, editing landmarks, running optimization, and visualizing results.
+
 # License
-NextFace is available for free, under GPL license, to use for research and educational purposes only. Please check LICENSE file.
+NextFace is available for free, under the GPL license, for research and educational purposes only. Please refer to the LICENSE file.
 
 # Acknowledgements
-The uvmap is taken from [here](https://github.com/unibas-gravis/parametric-face-image-generator/blob/master/data/regions/face12.json), landmarks association  from [here](https://github.com/kimoktm/Face2face/blob/master/data/custom_mapping.txt). [redner](https://github.com/BachiLi/redner/) is used for ray tracing, albedo model from [here](https://github.com/waps101/AlbedoMM/).
+- The UV map is taken from [here](https://github.com/unibas-gravis/parametric-face-image-generator/blob/master/data/regions/face12.json).
+- Landmarks association file is taken from [here](https://github.com/kimoktm/Face2face/blob/master/data/custom_mapping.txt).
+- [redner](https://github.com/BachiLi/redner/) is used for ray tracing.
+- The albedo model is taken from [here](https://github.com/waps101/AlbedoMM/).
 
-# contact 
-mail: deeb.abdallah @at gmail
+# Contact
+- Email: deeb.abdallah @at gmail  
+- Twitter: [abdallah_dib](https://twitter.com/abdallah_dib)
 
-twitter: abdallah_dib
-
-# Citation 
-If you use NextFace and find it useful in your work, these works are relevant for you:
+# Citation
+If you use NextFace and find it helpful, please cite our work:
 
 ```
 @inproceedings{dib2021practical,
@@ -141,3 +210,4 @@ If you use NextFace and find it useful in your work, these works are relevant fo
   journal={arXiv preprint arXiv:2203.07732},
   year={2022}
 }
+```

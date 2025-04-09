@@ -85,9 +85,9 @@ Initial Setup and Installation
   ```
   ## Step 3
   Dowloading Required Base Models and Albedo.
-* Download the Basel Face Model from [here](https://faces.dmi.unibas.ch/bfm/bfm2017.html).  
+* Download the Base Face Model from [here](https://faces.dmi.unibas.ch/bfm/bfm2017.html).  
   Fill out the form to receive a download link via email, then place the `model2017-1_face12_nomouth.h5` file into the `./baselMorphableModel` directory.
-* Download the Albedo Face Model from [here](https://github.com/waps101/AlbedoMM/releases/download/v1.0/albedoModel2020_face12_albedoPart.h5).  
+* Download the Albedo from [here](https://github.com/waps101/AlbedoMM/releases/download/v1.0/albedoModel2020_face12_albedoPart.h5).  
   Place the `albedoModel2020_face12_albedoPart.h5` file into the `./baselMorphableModel` directory.
 
 # How to Use
